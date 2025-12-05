@@ -6,12 +6,40 @@ Uses (row, col) coordinate ordering consistently across the project.
 
 import numpy as np
 import random
-from typing import Tuple, List, Optional, Set
 import math
-
+from typing import Tuple, List, Optional, Set, NamedTuple
+from enum import Enum
+from collections import namedtuple
 
 # -------------------------------------------------------------
-# DISTANCE FUNCTIONS (row, col)
+# 1. CORE DATA STRUCTURES (Required by __init__.py)
+# -------------------------------------------------------------
+
+# Immutable point structure: Position(row=10, col=5)
+Position = namedtuple('Position', ['row', 'col'])
+
+class Direction(Enum):
+    """
+    Enum for grid directions (row_change, col_change).
+    Assumes (0,0) is Top-Left.
+    """
+    UP = (-1, 0)
+    DOWN = (1, 0)
+    LEFT = (0, -1)
+    RIGHT = (0, 1)
+    
+    # Diagonals for 8-way movement
+    UP_LEFT = (-1, -1)
+    UP_RIGHT = (-1, 1)
+    DOWN_LEFT = (1, -1)
+    DOWN_RIGHT = (1, 1)
+    
+    @property
+    def delta(self):
+        return self.value
+
+# -------------------------------------------------------------
+# 2. DISTANCE FUNCTIONS (row, col)
 # -------------------------------------------------------------
 
 def manhattan_distance(a: Tuple[int, int], b: Tuple[int, int]) -> int:
@@ -38,7 +66,7 @@ def chebyshev_distance(a: Tuple[int, int], b: Tuple[int, int]) -> int:
 
 
 # -------------------------------------------------------------
-# RANDOM POSITION HELPERS
+# 3. RANDOM POSITION HELPERS
 # -------------------------------------------------------------
 
 def generate_random_position(height: int, width: int,
@@ -75,7 +103,7 @@ def generate_walkable_position(city, exclude: Optional[Set[Tuple[int, int]]] = N
 
 
 # -------------------------------------------------------------
-# NEIGHBOR FUNCTIONS (row, col)
+# 4. NEIGHBOR FUNCTIONS (row, col)
 # -------------------------------------------------------------
 
 def get_neighbors_4(row: int, col: int) -> List[Tuple[int, int]]:
@@ -111,7 +139,7 @@ def is_adjacent(a: Tuple[int, int], b: Tuple[int, int], diagonal: bool = False) 
 
 
 # -------------------------------------------------------------
-# GRID/GRAPH COORDINATE HELPERS
+# 5. GRID/GRAPH COORDINATE HELPERS
 # -------------------------------------------------------------
 
 def grid_to_graph_coords(row: int, col: int) -> Tuple[int, int]:
@@ -125,7 +153,7 @@ def graph_to_grid_coords(row: int, col: int) -> Tuple[int, int]:
 
 
 # -------------------------------------------------------------
-# PATH RECONSTRUCTION
+# 6. PATH RECONSTRUCTION
 # -------------------------------------------------------------
 
 def reconstruct_path(came_from: dict, start: Tuple[int, int],
@@ -147,7 +175,7 @@ def reconstruct_path(came_from: dict, start: Tuple[int, int],
 
 
 # -------------------------------------------------------------
-# GRID CREATION
+# 7. GRID CREATION & MANIPULATION
 # -------------------------------------------------------------
 
 def create_empty_grid(width: int, height: int, fill_value: int = 0) -> np.ndarray:
@@ -164,10 +192,6 @@ def create_random_grid(width: int, height: int,
 
     return np.random.choice(tile_types, size=(height, width), p=probabilities)
 
-
-# -------------------------------------------------------------
-# FLOOD FILL (row, col)
-# -------------------------------------------------------------
 
 def flood_fill(grid: np.ndarray, start: Tuple[int, int],
                target_value: int, fill_value: int) -> np.ndarray:
@@ -201,7 +225,7 @@ def flood_fill(grid: np.ndarray, start: Tuple[int, int],
 
 
 # -------------------------------------------------------------
-# MISC HELPERS
+# 8. MISC HELPERS (Interpolation, Smoothing, Math)
 # -------------------------------------------------------------
 
 def get_random_subset(items: List, count: int) -> List:

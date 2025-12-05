@@ -7,7 +7,7 @@ from typing import Tuple, List, Optional, Any
 from enum import Enum
 import math
 import uuid
-from .utils import euclidean_distance, manhattan_distance, chebyshev_distance, interpolate_positions
+from .utils import euclidean_distance, manhattan_distance, interpolate_positions
 
 class AgentState(Enum):
     """Agent states in simulation."""
@@ -22,7 +22,8 @@ class Agent:
     Represents a mobile agent in the city grid.
 
     COORDINATE SYSTEM:
-        All positions are (row, col), matching City grid indexing.
+        Positions are stored as floats (row, col) for smooth movement,
+        but cast to integers when interacting with the grid.
     """
 
     def __init__(
@@ -37,9 +38,9 @@ class Agent:
         self.id = str(uuid.uuid4())[:8]
         self.name = name
 
-        # Position and movement
-        self.position: Tuple[int, int] = start_pos
-        self.previous_position: Tuple[int, int] = start_pos
+        # Position and movement (Float for smooth viz, Int for logic)
+        self.position: Tuple[float, float] = (float(start_pos[0]), float(start_pos[1]))
+        self.previous_position: Tuple[float, float] = self.position
         self.goal: Optional[Tuple[int, int]] = None
         self.speed: float = speed
 
@@ -64,8 +65,7 @@ class Agent:
         self.goals_history: List[Tuple[int, int]] = []
         self.actions_taken: List[dict] = []
         self.beliefs: dict = {}
-        self.plan: List = []
-
+        
         # Statistics
         self.distance_traveled: float = 0.0
         self.steps_taken: int = 0
@@ -91,12 +91,13 @@ class Agent:
             return
 
         target = self.path[self.path_index]
+        # Calculate distance from current float position to integer target
         dist = euclidean_distance(self.position, target)
 
         if dist <= self.speed:
-            # Arrive at target
+            # Arrive at target (Snap to integer)
             self.previous_position = self.position
-            self.position = target
+            self.position = (float(target[0]), float(target[1]))
             self.path_index += 1
 
             self.distance_traveled += dist
@@ -112,14 +113,19 @@ class Agent:
 
             if self.path_index >= len(self.path):
                 self.state = AgentState.IDLE
-                if self.goal and self.position == self.goal:
+                if self.goal and (int(self.position[0]), int(self.position[1])) == self.goal:
                     self.goals_completed += 1
         else:
-            # Move proportionally toward target
+            # Move proportionally toward target (Interpolate)
             steps = max(int(dist / self.speed), 1)
             interp_positions = interpolate_positions(self.position, target, steps)
+            
             self.previous_position = self.position
-            self.position = interp_positions[1]
+            # Move to the next interpolated point (index 1 usually)
+            if len(interp_positions) > 1:
+                self.position = interp_positions[1]
+            else:
+                self.position = interp_positions[0]
 
             step_dist = euclidean_distance(self.previous_position, self.position)
             self.distance_traveled += step_dist
@@ -129,7 +135,7 @@ class Agent:
     def move_to(self, position: Tuple[int, int]) -> bool:
         """Directly move to adjacent position."""
         dist = euclidean_distance(self.position, position)
-        if dist > 1.5:
+        if dist > 1.5: # Allow small margin for diagonal
             return False
 
         if self.energy <= 0:
@@ -137,7 +143,7 @@ class Agent:
             return False
 
         self.previous_position = self.position
-        self.position = position
+        self.position = (float(position[0]), float(position[1]))
         self.steps_taken += 1
         self.distance_traveled += dist
         self.consume_energy(self.energy_consumption_rate * dist)
@@ -174,7 +180,10 @@ class Agent:
         self.state = AgentState.MOVING
 
     def is_at_goal(self) -> bool:
-        return self.goal is not None and self.position == self.goal
+        if self.goal is None:
+            return False
+        # Compare integer coordinates
+        return int(self.position[0]) == self.goal[0] and int(self.position[1]) == self.goal[1]
 
     def distance_to_goal(self) -> Optional[float]:
         return euclidean_distance(self.position, self.goal) if self.goal else None
@@ -182,15 +191,19 @@ class Agent:
     # ------------------- Sensors / Perception -------------------
 
     def sense(self, city) -> List[Tuple[int, int]]:
-        """Sense surrounding area within sensor range."""
-        row, col = self.position
+        """
+        Sense surrounding area within sensor range.
+        CRITICAL FIX: Casts position to int before grid access to prevent crashes.
+        """
+        row, col = int(self.position[0]), int(self.position[1])
         visible = []
 
         for dr in range(-self.sensor_range, self.sensor_range + 1):
             for dc in range(-self.sensor_range, self.sensor_range + 1):
                 nr, nc = row + dr, col + dc
                 if city.in_bounds(nr, nc):
-                    if euclidean_distance(self.position, (nr, nc)) <= self.sensor_range:
+                    # Check distance using actual coordinates
+                    if euclidean_distance((row, col), (nr, nc)) <= self.sensor_range:
                         visible.append((nr, nc))
                         if not city.is_walkable(nr, nc):
                             self.known_obstacles.add((nr, nc))
@@ -212,8 +225,8 @@ class Agent:
     def reset(self, position: Optional[Tuple[int, int]] = None) -> None:
         """Reset agent to initial state."""
         if position:
-            self.position = position
-            self.previous_position = position
+            self.position = (float(position[0]), float(position[1]))
+            self.previous_position = self.position
 
         self.goal = None
         self.path = []
@@ -230,18 +243,12 @@ class Agent:
         self.steps_taken = 0
         self.goals_completed = 0
 
-    def reset_to_idle(self) -> None:
-        """Reset agent to idle state without clearing history."""
-        self.state = AgentState.IDLE
-        self.goal = None
-        self.path = []
-        self.path_index = 0
-
     def get_status(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
-            "position": self.position,
+            # Return nice rounded floats for display
+            "position": (round(self.position[0], 2), round(self.position[1], 2)),
             "goal": self.goal,
             "state": self.state.name,
             "energy": round(self.energy, 2),
