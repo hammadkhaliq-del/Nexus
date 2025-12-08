@@ -17,7 +17,7 @@ from core.simulation import Simulation, SimulationEvent
 from core.agent import Agent, AgentState
 from ui.visualizer import Visualizer
 
-# --- AI IMPORTS (The Full Stack) ---
+# --- AI IMPORTS ---
 from ai.search import SearchEngine
 from ai.logic_engine import LogicEngine, AgentRules
 from ai.planner import Planner, Action, State
@@ -30,7 +30,7 @@ def create_prime_map():
     width, height = 30, 20
     grid = np.zeros((height, width), dtype=np.int32)
     
-    # City Blocks
+    # City Blocks (Walls = 1)
     grid[2:6, 2:8] = 1
     grid[2:6, 10:18] = 1
     grid[2:6, 20:28] = 1
@@ -42,9 +42,7 @@ def create_prime_map():
     grid[14:18, 20:28] = 1
     
     # Special Zones
-    grid[8:12, 10:18] = 2  # Park
-    grid[0, 0] = 0         # Depot A (Top Left)
-    grid[19, 29] = 0       # Dropoff B (Bottom Right)
+    grid[8:12, 10:18] = 2  # Park (Walkable cost 1)
     
     np.save("nexus_prime_map.npy", grid)
     return "nexus_prime_map.npy"
@@ -53,12 +51,6 @@ def create_prime_map():
 # 2. INTELLIGENT AGENT (THE BRAIN)
 # ==============================================================================
 class IntelligentAgent(Agent):
-    """
-    An Agent that uses:
-    1. PLANNER: To break tasks into steps (Goto -> Pickup -> Deliver)
-    2. SEARCH: To navigate the grid (A*)
-    3. LOGIC: To monitor health and rules (Energy check)
-    """
     def __init__(self, name, start_pos, graph):
         super().__init__(name, start_pos)
         self.graph = graph
@@ -70,7 +62,7 @@ class IntelligentAgent(Agent):
         # Agent Memory
         self.high_level_plan = []  # List of Planner Actions
         self.current_action = None # What I am doing right now
-        self.delivery_state = "IDLE" 
+        self.path_calculated = False # State flag
         
         # Initialize Logic Rules (Reflexes)
         self.logic_engine.add_rule(AgentRules.low_energy_recharge(30))
@@ -79,61 +71,32 @@ class IntelligentAgent(Agent):
     def assign_mission(self, pickup_loc, dropoff_loc):
         """
         Uses the PLANNER to generate a sequence of actions.
-        Task: Get package from A and take it to B.
         """
         print(f"\n[{self.name}] 🤖 COMPUTING MISSION PLAN...")
         
-        # 1. Define the Planning Domain (STRIPS)
-        # Action: Go to Pickup
-        act_goto_pickup = Action(
-            name="goto_pickup",
-            preconditions={"at_start"},
-            add_effects={"at_pickup"},
-            delete_effects={"at_start"}
-        )
-        # Action: Pickup Package
-        act_pickup = Action(
-            name="pickup_package",
-            preconditions={"at_pickup", "hands_empty"},
-            add_effects={"has_package"},
-            delete_effects={"hands_empty"}
-        )
-        # Action: Go to Dropoff
-        act_goto_drop = Action(
-            name="goto_dropoff",
-            preconditions={"at_pickup", "has_package"},
-            add_effects={"at_dropoff"},
-            delete_effects={"at_pickup"}
-        )
-        # Action: Deliver
-        act_deliver = Action(
-            name="deliver_package",
-            preconditions={"at_dropoff", "has_package"},
-            add_effects={"mission_complete"},
-            delete_effects={"has_package"}
-        )
+        # 1. Define Actions
+        act_goto_pickup = Action("goto_pickup", {"at_start"}, {"at_pickup"}, {"at_start"})
+        act_pickup = Action("pickup_package", {"at_pickup", "hands_empty"}, {"has_package"}, {"hands_empty"})
+        act_goto_drop = Action("goto_dropoff", {"at_pickup", "has_package"}, {"at_dropoff"}, {"at_pickup"})
+        act_deliver = Action("deliver_package", {"at_dropoff", "has_package"}, {"mission_complete"}, {"has_package"})
 
         self.planner.add_action(act_goto_pickup)
         self.planner.add_action(act_pickup)
         self.planner.add_action(act_goto_drop)
         self.planner.add_action(act_deliver)
 
-        # 2. Define Initial State and Goal
+        # 2. Generate Plan
         initial = State({"at_start", "hands_empty"})
         goal = {"mission_complete"}
-
-        # 3. Generate Plan
         plan = self.planner.plan(initial, goal)
         
         if plan:
-            # Store metadata for execution
             self.high_level_plan = []
             for step in plan:
                 meta = {"name": step.name}
                 if step.name == "goto_pickup": meta["target"] = pickup_loc
                 if step.name == "goto_dropoff": meta["target"] = dropoff_loc
                 self.high_level_plan.append(meta)
-                
             print(f"[{self.name}] 📜 PLAN GENERATED: {[s['name'] for s in self.high_level_plan]}")
         else:
             print(f"[{self.name}] ❌ PLAN FAILED. Impossible goal.")
@@ -142,44 +105,48 @@ class IntelligentAgent(Agent):
         """
         The Main AI Loop. Called every tick.
         """
-        # 1. Run Reflexes (Logic Engine)
+        # 1. Run Reflexes
         self.logic_engine.update_memory("agent", self)
         alerts = self.logic_engine.forward_chain()
-        if alerts:
-            print(f"[{self.name}] ⚡ REFLEX TRIGGERED: {alerts}")
-            # If logic says CHARGING, we stop moving
-            if self.state == AgentState.CHARGING:
-                return
+        if alerts and self.state == AgentState.CHARGING:
+            return
 
-        # 2. Execute High-Level Plan
-        if not self.path and not self.current_action and self.high_level_plan:
-            # Pop next action
+        # 2. Pick Next Action from Plan
+        if not self.current_action and self.high_level_plan:
             self.current_action = self.high_level_plan.pop(0)
-            action_name = self.current_action["name"]
-            print(f"[{self.name}] ▶️ EXECUTING ACTION: {action_name}")
+            self.path_calculated = False # Reset path flag for new action
+            print(f"[{self.name}] ▶️ STARTING ACTION: {self.current_action['name']}")
 
-            if "goto" in action_name:
-                # Use SEARCH ENGINE (A*) for movement
-                target = self.current_action["target"]
-                start_node = (int(self.position[0]), int(self.position[1]))
-                path = SearchEngine.a_star(self.graph, start_node, target)
-                if path:
-                    self.set_path(path)
-                else:
-                    print(f"[{self.name}] ❌ PATHFINDING ERROR.")
-            
-            elif "pickup" in action_name or "deliver" in action_name:
-                # Simulate work time
-                self.wait() # Pause for 1 tick
-                print(f"[{self.name}] 🔨 Working...")
-
-        # 3. Clear Action when done
+        # 3. Execute Current Action
         if self.current_action:
-            if "goto" in self.current_action["name"] and not self.path:
-                print(f"[{self.name}] ✓ Arrived at waypoint.")
-                self.current_action = None
-            elif "pickup" in self.current_action["name"]:
-                self.current_action = None # Instant action for now
+            action_name = self.current_action["name"]
+
+            # --- CASE A: MOVEMENT ---
+            if "goto" in action_name:
+                target = self.current_action["target"]
+                
+                # Only calculate path ONCE per action
+                if not self.path_calculated:
+                    start_node = (int(self.position[0]), int(self.position[1]))
+                    path = SearchEngine.a_star(self.graph, start_node, target)
+                    if path:
+                        self.set_path(path)
+                        self.path_calculated = True
+                    else:
+                        print(f"[{self.name}] ❌ PATHFINDING ERROR to {target}. Retrying...")
+                        return # Try again next tick
+
+                # Check arrival using Math (Integer comparison)
+                curr_pos = (int(self.position[0]), int(self.position[1]))
+                if curr_pos == target:
+                    print(f"[{self.name}] ✓ Arrived at waypoint.")
+                    self.current_action = None # Done
+            
+            # --- CASE B: WORK (Pickup/Deliver) ---
+            elif "pickup" in action_name or "deliver" in action_name:
+                self.wait() # Simulate 1 tick of work
+                print(f"[{self.name}] 🔨 Working...")
+                self.current_action = None # Done immediately after waiting
 
 # ==============================================================================
 # 3. MAIN SIMULATION LAUNCHER
@@ -193,21 +160,22 @@ def main():
     graph = CityGraph(city)
     sim = Simulation(city, graph)
     
-    # 2. Deploy Intelligent Agent
-    # Agent: Courier-01
-    # Mission: Go from Top-Left (0,0) -> Pick up at (2,2) -> Deliver to Bottom-Right (19,29)
+    # 2. Deploy Intelligent Agents
+    # FIX: Ensure coordinates are valid walkable roads (0), NOT buildings (1)
+    
+    # Courier: Start(0,0) -> Pickup(1,1) -> Dropoff(19,29)
+    # (1,1) is a road corner near the first building block
     courier = IntelligentAgent("Courier-AI", (0, 0), graph)
     sim.add_agent(courier)
+    courier.assign_mission(pickup_loc=(1, 1), dropoff_loc=(19, 29))
     
-    # Assign the complex mission
-    courier.assign_mission(pickup_loc=(2, 2), dropoff_loc=(19, 29))
-    
-    # Agent 2: Security Bot (Patrol Pattern)
+    # SecBot: Start(9,9) -> Patrol Point A(9,19) -> Patrol Point B(9,1)
+    # Using (9,19) and (9,1) keeps it on the horizontal road between buildings
     sec_bot = IntelligentAgent("SecBot", (9, 9), graph)
     sim.add_agent(sec_bot)
-    sec_bot.assign_mission(pickup_loc=(9, 20), dropoff_loc=(9, 2)) # Patrol route
+    sec_bot.assign_mission(pickup_loc=(9, 19), dropoff_loc=(9, 1))
 
-    # 3. Schedule Events
+    # 3. Events
     sim.schedule_event(SimulationEvent("traffic_jam", (5, 9), start_time=40, duration=50))
     
     def on_jam(sim, event):
@@ -220,7 +188,7 @@ def main():
 
     sim.register_event_handler("traffic_jam", on_jam, off_jam)
 
-    # 4. Hook AI Update Loop
+    # 4. Hook AI Update
     def update_agents(sim, step):
         for agent in sim.agents:
             if isinstance(agent, IntelligentAgent):
