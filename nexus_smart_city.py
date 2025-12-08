@@ -29,16 +29,30 @@ from ai.bayesian import BayesianNetwork
 from ai.planner import Planner, State, Action
 from ai.csp_engine import CSPEngine, Variable, Constraint
 
-# ==================== COLOR SCHEME ====================
-HOLO_CYAN = "#00ffff"
-HOLO_MAGENTA = "#ff00ff"
-HOLO_BLUE = "#0080ff"
-HOLO_GREEN = "#00ff80"
-HOLO_RED = "#ff0055"
-HOLO_ORANGE = "#ff8800"
-HOLO_PURPLE = "#7b2ff7"
-DARK_BG = "#0a0a15"
-DARK_PANEL = "rgba(10, 20, 40, 0.9)"
+# ==================== COLOR SCHEME (PROFESSIONAL MUTED) ====================
+# Professional muted colors for a clean, business-like interface
+DARK_BG = "#0d1117"  # Dark navy background
+DARK_PANEL = "rgba(22, 27, 34, 0.95)"  # Subtle panel background
+
+# Primary colors - muted and professional
+PRIMARY_BLUE = "#2d7dd2"  # Calm professional blue
+PRIMARY_GREEN = "#3fb950"  # Success green
+PRIMARY_ORANGE = "#d97617"  # Warning orange
+PRIMARY_RED = "#e5534b"  # Error/alert red
+PRIMARY_PURPLE = "#8256d0"  # Accent purple
+
+# Neutral colors for text and borders
+TEXT_PRIMARY = "#e6edf3"  # Light text
+TEXT_SECONDARY = "#8b949e"  # Muted text
+BORDER_COLOR = "#30363d"  # Subtle borders
+ACCENT_BLUE = "#58a6ff"  # Bright but not harsh accent
+
+# Building colors - realistic and professional
+BUILDING_COMMERCIAL = "#3a4556"  # Dark gray-blue
+BUILDING_RESIDENTIAL = "#445566"  # Medium gray-blue
+BUILDING_INDUSTRIAL = "#556677"  # Light gray-blue
+PARK_GREEN = "#2ea043"  # Natural green
+ROAD_GRAY = "#21262d"  # Asphalt gray
 
 # ==================== PAGE CONFIGURATION ====================
 st.set_page_config(
@@ -48,150 +62,134 @@ st.set_page_config(
     page_icon="🏙️"
 )
 
-# ==================== CSS STYLING ====================
+# ==================== CSS STYLING (PROFESSIONAL) ====================
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
     * {{
-        font-family: 'Rajdhani', sans-serif !important;
+        font-family: 'Inter', sans-serif !important;
     }}
     
     .stApp {{
-        background: linear-gradient(135deg, {DARK_BG} 0%, #0f0f25 50%, #1a0a20 100%);
+        background: {DARK_BG};
     }}
     
     h1, h2, h3, h4 {{
-        font-family: 'Orbitron', sans-serif !important;
-        color: {HOLO_CYAN};
-        text-shadow: 0 0 15px {HOLO_CYAN}, 0 0 30px {HOLO_CYAN};
-        letter-spacing: 3px;
+        font-family: 'Inter', sans-serif !important;
+        color: {TEXT_PRIMARY};
+        font-weight: 600;
+        letter-spacing: -0.5px;
     }}
     
     .main-title {{
-        font-size: 3.5rem;
+        font-size: 2.5rem;
         text-align: center;
-        color: {HOLO_CYAN};
-        text-shadow: 0 0 20px {HOLO_CYAN}, 0 0 40px {HOLO_CYAN}, 0 0 60px {HOLO_CYAN};
+        color: {ACCENT_BLUE};
         margin-bottom: 10px;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 900;
-        letter-spacing: 10px;
+        font-weight: 700;
+        letter-spacing: -1px;
     }}
     
     .subtitle {{
         text-align: center;
-        color: {HOLO_MAGENTA};
-        font-size: 1.3rem;
+        color: {TEXT_SECONDARY};
+        font-size: 1rem;
         margin-bottom: 30px;
-        letter-spacing: 4px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
     }}
     
     .stTabs [data-baseweb="tab-panel"] {{
         background-color: {DARK_PANEL};
-        border: 2px solid {HOLO_CYAN};
-        box-shadow: 0 0 20px {HOLO_CYAN};
-        border-radius: 10px;
-        padding: 25px;
-        backdrop-filter: blur(15px);
+        border: 1px solid {BORDER_COLOR};
+        border-radius: 8px;
+        padding: 24px;
     }}
     
     [data-testid="stMetricValue"] {{
-        color: {HOLO_CYAN};
-        text-shadow: 0 0 10px {HOLO_CYAN};
-        font-size: 2.2rem !important;
-        font-weight: 700;
-    }}
-    
-    [data-testid="stMetricLabel"] {{
-        color: {HOLO_MAGENTA};
-        text-transform: uppercase;
-        letter-spacing: 2px;
+        color: {PRIMARY_BLUE};
+        font-size: 1.8rem !important;
         font-weight: 600;
     }}
     
+    [data-testid="stMetricLabel"] {{
+        color: {TEXT_SECONDARY};
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }}
+    
     .stButton button {{
-        background: linear-gradient(135deg, {HOLO_BLUE}, {HOLO_PURPLE});
+        background: {PRIMARY_BLUE};
         color: white;
-        border: 2px solid {HOLO_CYAN};
-        box-shadow: 0 0 25px {HOLO_CYAN};
-        font-weight: 700;
-        letter-spacing: 2px;
-        font-size: 1.1rem;
-        transition: all 0.3s;
-        padding: 12px 30px;
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+        border-radius: 6px;
     }}
     
     .stButton button:hover {{
-        box-shadow: 0 0 35px {HOLO_CYAN}, 0 0 50px {HOLO_MAGENTA};
-        transform: translateY(-3px);
+        background: {ACCENT_BLUE};
+        transform: translateY(-1px);
     }}
     
     .event-box {{
         background: {DARK_PANEL};
-        border-left: 4px solid {HOLO_CYAN};
-        padding: 12px;
-        margin: 8px 0;
-        border-radius: 5px;
-        backdrop-filter: blur(10px);
-        font-size: 0.95rem;
+        border-left: 3px solid {PRIMARY_BLUE};
+        padding: 10px 12px;
+        margin: 6px 0;
+        border-radius: 4px;
+        font-size: 0.875rem;
     }}
     
     .event-time {{
-        color: {HOLO_MAGENTA};
-        font-weight: 700;
+        color: {TEXT_SECONDARY};
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
     }}
     
     .ai-engine-badge {{
-        background: linear-gradient(135deg, {HOLO_PURPLE}, {HOLO_BLUE});
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
+        background: {DARK_PANEL};
+        color: {TEXT_PRIMARY};
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
         display: inline-block;
         margin: 3px;
-        border: 1px solid {HOLO_CYAN};
-        box-shadow: 0 0 10px {HOLO_CYAN};
+        border: 1px solid {BORDER_COLOR};
     }}
     
     .emergency-badge {{
-        background: linear-gradient(135deg, {HOLO_RED}, {HOLO_ORANGE});
+        background: {PRIMARY_RED};
         color: white;
         padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 700;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
         display: inline-block;
-        animation: pulse 2s infinite;
-    }}
-    
-    @keyframes pulse {{
-        0%, 100% {{ opacity: 1; }}
-        50% {{ opacity: 0.6; }}
     }}
     
     .login-container {{
         background: {DARK_PANEL};
-        border: 3px solid {HOLO_CYAN};
-        box-shadow: 0 0 40px {HOLO_CYAN};
-        border-radius: 20px;
-        padding: 50px;
-        backdrop-filter: blur(20px);
+        border: 1px solid {BORDER_COLOR};
+        border-radius: 12px;
+        padding: 40px;
     }}
     
     .signup-container {{
         background: {DARK_PANEL};
-        border: 3px solid {HOLO_MAGENTA};
-        box-shadow: 0 0 40px {HOLO_MAGENTA};
-        border-radius: 20px;
-        padding: 50px;
-        backdrop-filter: blur(20px);
+        border: 1px solid {BORDER_COLOR};
+        border-radius: 12px;
+        padding: 40px;
     }}
     
     ::-webkit-scrollbar {{
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
     }}
     
     ::-webkit-scrollbar-track {{
@@ -199,8 +197,12 @@ st.markdown(f"""
     }}
     
     ::-webkit-scrollbar-thumb {{
-        background: linear-gradient(180deg, {HOLO_CYAN}, {HOLO_PURPLE});
-        border-radius: 6px;
+        background: {BORDER_COLOR};
+        border-radius: 5px;
+    }}
+    
+    ::-webkit-scrollbar-thumb:hover {{
+        background: {TEXT_SECONDARY};
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -517,10 +519,45 @@ def deploy_agents(city, graph, simulation):
     st.session_state.emergency_vehicles = emergency_vehicles
     log_event("SYSTEM", f"🚗 Deployed {num_cars} cars + {len(emergency_vehicles)} emergency vehicles", "SYSTEM")
 
-# ==================== 3D VISUALIZATION ====================
+# ==================== 3D VISUALIZATION (IMPROVED) ====================
+
+def create_3d_building_mesh(x, y, width, depth, height, color):
+    """Create a 3D building mesh for realistic visualization"""
+    # Define the 8 vertices of the building cuboid
+    vertices = [
+        [x, y, 0], [x+width, y, 0], [x+width, y+depth, 0], [x, y+depth, 0],  # Bottom
+        [x, y, height], [x+width, y, height], [x+width, y+depth, height], [x, y+depth, height]  # Top
+    ]
+    
+    # Define the 12 triangles (2 per face, 6 faces)
+    faces = [
+        [0, 1, 2], [0, 2, 3],  # Bottom
+        [4, 5, 6], [4, 6, 7],  # Top
+        [0, 1, 5], [0, 5, 4],  # Front
+        [2, 3, 7], [2, 7, 6],  # Back
+        [0, 3, 7], [0, 7, 4],  # Left
+        [1, 2, 6], [1, 6, 5]   # Right
+    ]
+    
+    x_coords = [v[0] for v in vertices]
+    y_coords = [v[1] for v in vertices]
+    z_coords = [v[2] for v in vertices]
+    
+    i_faces = [f[0] for f in faces]
+    j_faces = [f[1] for f in faces]
+    k_faces = [f[2] for f in faces]
+    
+    return go.Mesh3d(
+        x=x_coords, y=y_coords, z=z_coords,
+        i=i_faces, j=j_faces, k=k_faces,
+        color=color,
+        opacity=0.85,
+        showlegend=False,
+        hoverinfo='skip'
+    )
 
 def create_3d_smart_city_visualization():
-    """Create enhanced 3D visualization of the smart city"""
+    """Create enhanced 3D visualization with proper building structures"""
     city = st.session_state.city
     agents = st.session_state.agents
     emergency_vehicles = st.session_state.emergency_vehicles
@@ -532,14 +569,14 @@ def create_3d_smart_city_visualization():
     grid = city.grid
     height, width = grid.shape
     
-    # 1. HOLOGRAPHIC GRID
+    # 1. GROUND PLANE (Subtle grid)
     if st.session_state.show_grid:
         grid_spacing = 2
         for i in range(0, height, grid_spacing):
             fig.add_trace(go.Scatter3d(
                 x=[0, width], y=[i, i], z=[0, 0],
                 mode='lines',
-                line=dict(color=HOLO_CYAN, width=0.8),
+                line=dict(color=BORDER_COLOR, width=0.5),
                 showlegend=False,
                 hoverinfo='skip'
             ))
@@ -547,39 +584,61 @@ def create_3d_smart_city_visualization():
             fig.add_trace(go.Scatter3d(
                 x=[j, j], y=[0, height], z=[0, 0],
                 mode='lines',
-                line=dict(color=HOLO_CYAN, width=0.8),
+                line=dict(color=BORDER_COLOR, width=0.5),
                 showlegend=False,
                 hoverinfo='skip'
             ))
     
-    # 2. BUILDINGS
+    # 2. 3D BUILDINGS (Proper mesh structures)
     building_positions = np.argwhere(grid == 1)
     if len(building_positions) > 0:
-        x_buildings = building_positions[:, 1]
-        y_buildings = building_positions[:, 0]
-        z_buildings = np.random.uniform(8, 20, len(building_positions))
-        colors = [random.choice([HOLO_CYAN, HOLO_MAGENTA, HOLO_BLUE]) for _ in range(len(building_positions))]
-        
-        fig.add_trace(go.Scatter3d(
-            x=x_buildings, y=y_buildings, z=z_buildings,
-            mode='markers',
-            marker=dict(size=6, color=colors, symbol='square', opacity=0.7, line=dict(color='white', width=0.5)),
-            name='Buildings',
-            showlegend=False,
-            hoverinfo='skip'
-        ))
+        # Group adjacent buildings
+        processed = set()
+        for pos in building_positions:
+            by, bx = pos
+            if (by, bx) in processed:
+                continue
+            
+            # Find building cluster
+            bw = 1
+            bh = 1
+            
+            # Check width
+            while bx + bw < width and grid[by, bx + bw] == 1:
+                bw += 1
+            
+            # Check height  
+            while by + bh < height and all(grid[by + bh, bx + w] == 1 for w in range(bw)):
+                bh += 1
+            
+            # Mark as processed
+            for h in range(bh):
+                for w in range(bw):
+                    processed.add((by + h, bx + w))
+            
+            # Random building height
+            building_height = np.random.uniform(10, 25)
+            
+            # Choose building color based on type
+            building_colors = [BUILDING_COMMERCIAL, BUILDING_RESIDENTIAL, BUILDING_INDUSTRIAL]
+            building_color = random.choice(building_colors)
+            
+            # Add 3D building mesh
+            fig.add_trace(create_3d_building_mesh(
+                bx, by, bw, bh, building_height, building_color
+            ))
     
-    # 3. PARKS
+    # 3. PARKS (Flat green areas)
     park_positions = np.argwhere(grid == 2)
     if len(park_positions) > 0:
         x_parks = park_positions[:, 1]
         y_parks = park_positions[:, 0]
-        z_parks = np.ones(len(park_positions)) * 0.5
+        z_parks = np.ones(len(park_positions)) * 0.2
         
         fig.add_trace(go.Scatter3d(
             x=x_parks, y=y_parks, z=z_parks,
             mode='markers',
-            marker=dict(size=5, color=HOLO_GREEN, symbol='square', opacity=0.5),
+            marker=dict(size=6, color=PARK_GREEN, symbol='square', opacity=0.7),
             name='Parks',
             showlegend=False,
             hoverinfo='skip'
@@ -595,7 +654,7 @@ def create_3d_smart_city_visualization():
         fig.add_trace(go.Scatter3d(
             x=x_restricted, y=y_restricted, z=z_restricted,
             mode='markers',
-            marker=dict(size=5, color=HOLO_RED, symbol='x', opacity=0.8),
+            marker=dict(size=5, color=PRIMARY_RED, symbol='x', opacity=0.8),
             name='Restricted',
             showlegend=False,
             hoverinfo='skip'
@@ -606,12 +665,12 @@ def create_3d_smart_city_visualization():
         for incident in st.session_state.emergencies:
             ix, iy = incident['position'][1], incident['position'][0]
             fig.add_trace(go.Scatter3d(
-                x=[ix], y=[iy], z=[12],
+                x=[ix], y=[iy], z=[15],
                 mode='markers+text',
-                marker=dict(size=12, color=HOLO_RED, symbol='diamond', line=dict(color='white', width=2)),
+                marker=dict(size=10, color=PRIMARY_RED, symbol='diamond', line=dict(color='white', width=1.5)),
                 text=[incident['type']],
                 textposition='top center',
-                textfont=dict(color=HOLO_RED, size=10),
+                textfont=dict(color=PRIMARY_RED, size=9),
                 name=incident['type'],
                 showlegend=False,
                 hovertext=f"{incident['type']}<br>Time: {incident['time']}"
@@ -621,15 +680,15 @@ def create_3d_smart_city_visualization():
     if st.session_state.show_agents and agents:
         for agent in agents:
             ax, ay = agent.position[1], agent.position[0]
-            color = HOLO_GREEN if agent.state == AgentState.MOVING else HOLO_ORANGE
+            color = PRIMARY_GREEN if agent.state == AgentState.MOVING else PRIMARY_ORANGE
             
             fig.add_trace(go.Scatter3d(
-                x=[ax], y=[ay], z=[10],
+                x=[ax], y=[ay], z=[8],
                 mode='markers+text',
-                marker=dict(size=10, color=color, symbol='diamond', line=dict(color='white', width=1.5)),
+                marker=dict(size=8, color=color, symbol='circle', line=dict(color='white', width=1)),
                 text=[agent.name],
                 textposition='top center',
-                textfont=dict(color=color, size=8),
+                textfont=dict(color=color, size=7),
                 name=agent.name,
                 hovertext=f"{agent.name}<br>Energy: {agent.get_energy_percent():.1f}%<br>State: {agent.state.name}",
                 hoverinfo='text'
@@ -639,12 +698,12 @@ def create_3d_smart_city_visualization():
             if st.session_state.show_paths and agent.path and len(agent.path) > 1:
                 path_x = [p[1] for p in agent.path]
                 path_y = [p[0] for p in agent.path]
-                path_z = [8] * len(agent.path)
+                path_z = [6] * len(agent.path)
                 
                 fig.add_trace(go.Scatter3d(
                     x=path_x, y=path_y, z=path_z,
                     mode='lines',
-                    line=dict(color=color, width=3),
+                    line=dict(color=color, width=2),
                     showlegend=False,
                     hoverinfo='skip'
                 ))
@@ -653,15 +712,15 @@ def create_3d_smart_city_visualization():
     if st.session_state.show_agents and emergency_vehicles:
         for vehicle in emergency_vehicles:
             vx, vy = vehicle.position[1], vehicle.position[0]
-            color = HOLO_RED if vehicle.state == AgentState.MOVING else HOLO_BLUE
+            color = PRIMARY_RED if vehicle.state == AgentState.MOVING else PRIMARY_BLUE
             
             fig.add_trace(go.Scatter3d(
-                x=[vx], y=[vy], z=[11],
+                x=[vx], y=[vy], z=[9],
                 mode='markers+text',
-                marker=dict(size=12, color=color, symbol='diamond', line=dict(color='white', width=2)),
+                marker=dict(size=10, color=color, symbol='diamond', line=dict(color='white', width=1.5)),
                 text=[vehicle.name],
                 textposition='top center',
-                textfont=dict(color=color, size=9, family='Orbitron'),
+                textfont=dict(color=color, size=8),
                 name=vehicle.name,
                 hovertext=f"{vehicle.name}<br>State: {vehicle.state.name}",
                 hoverinfo='text'
@@ -670,21 +729,21 @@ def create_3d_smart_city_visualization():
             if st.session_state.show_paths and vehicle.path and len(vehicle.path) > 1:
                 path_x = [p[1] for p in vehicle.path]
                 path_y = [p[0] for p in vehicle.path]
-                path_z = [9] * len(vehicle.path)
+                path_z = [7] * len(vehicle.path)
                 
                 fig.add_trace(go.Scatter3d(
                     x=path_x, y=path_y, z=path_z,
                     mode='lines',
-                    line=dict(color=HOLO_RED, width=4, dash='dash'),
+                    line=dict(color=PRIMARY_RED, width=3, dash='dash'),
                     showlegend=False,
                     hoverinfo='skip'
                 ))
     
-    # Camera settings
+    # Camera settings - subtle rotation
     angle = st.session_state.camera_angle
     camera = dict(
-        eye=dict(x=np.cos(angle) * 1.5, y=np.sin(angle) * 1.5, z=1.2),
-        center=dict(x=0.5, y=0.5, z=0.3),
+        eye=dict(x=np.cos(angle) * 1.5, y=np.sin(angle) * 1.5, z=1.1),
+        center=dict(x=0.5, y=0.5, z=0.25),
         up=dict(x=0, y=0, z=1)
     )
     
@@ -692,7 +751,7 @@ def create_3d_smart_city_visualization():
         scene=dict(
             xaxis=dict(showgrid=False, showticklabels=False, showbackground=False, range=[0, width]),
             yaxis=dict(showgrid=False, showticklabels=False, showbackground=False, range=[0, height]),
-            zaxis=dict(showgrid=False, showticklabels=False, showbackground=False, range=[0, 25]),
+            zaxis=dict(showgrid=False, showticklabels=False, showbackground=False, range=[0, 30]),
             bgcolor=DARK_BG,
             camera=camera,
             aspectmode='cube'
@@ -706,6 +765,8 @@ def create_3d_smart_city_visualization():
     )
     
     return fig
+
+# ==================== SIMULATION UPDATE ====================
 
 # ==================== SIMULATION UPDATE ====================
 
@@ -804,6 +865,38 @@ def dispatch_emergency_response(location, emergency_type):
                           f"1. Navigate to {location} 2. Handle {emergency_type} 3. Return to base")
             st.session_state.stats['plans_executed'] += 1
 
+def restart_simulation():
+    """Restart simulation with new city generation"""
+    st.session_state.city = None
+    st.session_state.graph = None
+    st.session_state.simulation = None
+    st.session_state.agents = []
+    st.session_state.emergency_vehicles = []
+    st.session_state.is_running = False
+    st.session_state.current_tick = 0
+    st.session_state.events = []
+    st.session_state.incidents = []
+    st.session_state.emergencies = []
+    st.session_state.ai_decisions = []
+    st.session_state.camera_angle = 0
+    
+    # Reset statistics
+    st.session_state.stats = {
+        'efficiency_score': 100.0,
+        'avg_search_time': 0.0,
+        'resource_utilization': 85.0,
+        'incidents_count': 0,
+        'avg_path_length': 0.0,
+        'accidents_predicted': 0,
+        'rules_fired': 0,
+        'plans_executed': 0,
+        'constraints_violated': 0
+    }
+    
+    log_event("SYSTEM", "🔄 Simulation restarted with new city generation", "SYSTEM")
+    # Re-initialize
+    initialize_smart_city()
+
 # ==================== MAIN DASHBOARD ====================
 
 def show_dashboard():
@@ -813,24 +906,28 @@ def show_dashboard():
         initialize_smart_city()
     
     # ==================== HEADER ====================
-    st.markdown('<div class="main-title">⚡ NEXUS AI SYSTEM ⚡</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">SMART CITY SIMULATION • 6 AI ENGINES ACTIVE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">NEXUS AI SYSTEM</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Smart City Simulation • 6 AI Engines Active</div>', unsafe_allow_html=True)
     
     # AI Engine Status Badges
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
     with col1:
-        st.markdown(f'<div class="ai-engine-badge">🔍 A* SEARCH</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ai-engine-badge">🔍 A* Search</div>', unsafe_allow_html=True)
     with col2:
         st.markdown(f'<div class="ai-engine-badge">⚡ CSP</div>', unsafe_allow_html=True)
     with col3:
-        st.markdown(f'<div class="ai-engine-badge">🧠 LOGIC</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ai-engine-badge">🧠 Logic</div>', unsafe_allow_html=True)
     with col4:
-        st.markdown(f'<div class="ai-engine-badge">📋 HTN PLANNER</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ai-engine-badge">📋 HTN</div>', unsafe_allow_html=True)
     with col5:
-        st.markdown(f'<div class="ai-engine-badge">📊 BAYESIAN</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ai-engine-badge">📊 Bayesian</div>', unsafe_allow_html=True)
     with col6:
         st.markdown(f'<div class="ai-engine-badge">💡 XAI</div>', unsafe_allow_html=True)
     with col7:
+        if st.button("🔄 Restart", help="Restart simulation with new city"):
+            restart_simulation()
+            st.rerun()
+    with col8:
         if st.button("🚪 Logout"):
             st.session_state.logged_in = False
             st.rerun()
@@ -906,18 +1003,20 @@ def show_dashboard():
     
     # RIGHT PANEL
     with right_col:
-        st.markdown(f"<h2>📡 LIVE EVENTS</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2>📡 Live Events</h2>", unsafe_allow_html=True)
         
         event_container = st.container(height=300)
         with event_container:
             for event in st.session_state.events[:20]:
-                color = HOLO_CYAN
+                color = ACCENT_BLUE
                 if event['type'] == 'WARNING':
-                    color = HOLO_ORANGE
+                    color = PRIMARY_ORANGE
                 elif event['type'] == 'EMERGENCY':
-                    color = HOLO_RED
+                    color = PRIMARY_RED
                 elif event['type'] == 'AI':
-                    color = HOLO_PURPLE
+                    color = PRIMARY_PURPLE
+                elif event['type'] == 'SYSTEM':
+                    color = PRIMARY_GREEN
                 
                 engine_badge = f" [{event['ai_engine']}]" if event.get('ai_engine') else ""
                 
@@ -929,7 +1028,7 @@ def show_dashboard():
                 """, unsafe_allow_html=True)
         
         st.markdown("---")
-        st.markdown(f"<h2>💡 AI DECISIONS</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2>💡 AI Decisions</h2>", unsafe_allow_html=True)
         
         ai_container = st.container(height=300)
         with ai_container:
@@ -937,9 +1036,9 @@ def show_dashboard():
                 st.markdown(f"""
                 <div class="event-box">
                     <span class="event-time">[{decision['time']}]</span>
-                    <div style="color:{HOLO_CYAN}; font-weight:700;">{decision['engine']}</div>
-                    <div style="color:{HOLO_MAGENTA};">{decision['decision']}</div>
-                    <div style="color:{HOLO_GREEN}; font-size:0.85rem;">{decision['reasoning']}</div>
+                    <div style="color:{PRIMARY_BLUE}; font-weight:600;">{decision['engine']}</div>
+                    <div style="color:{TEXT_PRIMARY};">{decision['decision']}</div>
+                    <div style="color:{TEXT_SECONDARY}; font-size:0.85rem;">{decision['reasoning']}</div>
                 </div>
                 """, unsafe_allow_html=True)
     
