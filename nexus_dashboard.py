@@ -293,15 +293,15 @@ def initialize_simulation():
         pos_index = (i * len(walkable_positions)) // num_agents
         start_pos = walkable_positions[pos_index]
         agent = Agent(f"Agent-{i+1}", start_pos, speed=0.8)
-            
-            # Assign random goal and path
-            goal_pos = random.choice(walkable_positions)
-            agent.set_goal(goal_pos)
-            
-            result = a_star(graph, start_pos, goal_pos)
-            if result.success:
-                agent.set_path(result.path)
-                log_event("AI", f"{agent.name} planned path via A* ({len(result.path)} waypoints)")
+        
+        # Assign random goal and path
+        goal_pos = random.choice(walkable_positions)
+        agent.set_goal(goal_pos)
+        
+        result = a_star(graph, start_pos, goal_pos)
+        if result.success:
+            agent.set_path(result.path)
+            log_event("AI", f"{agent.name} planned path via A* ({len(result.path)} waypoints)")
             
             simulation.add_agent(agent)
             agents.append(agent)
