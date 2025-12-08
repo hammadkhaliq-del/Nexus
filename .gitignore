@@ -1,4 +1,5 @@
 __pycache__
 temp_city.npy
+nexus_smart_city.npy
 *.pyc
 .DS_Store
