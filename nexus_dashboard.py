@@ -35,6 +35,15 @@ DARK_BG = "#0a0a15"
 DARK_PANEL = "rgba(10, 20, 40, 0.8)"
 
 # -------------------------
+# SIMULATION CONSTANTS
+# -------------------------
+EVENT_LOG_PROBABILITY = 0.1  # Probability of logging goal reached events
+LOW_ENERGY_THRESHOLD = 20.0  # Energy threshold for warnings
+ENERGY_WARNING_PROBABILITY = 0.05  # Probability of logging energy warnings
+PERF_SPEED_MULTIPLIER = 1.2  # Performance speed multiplier for agent inspector
+MIN_SLEEP_DURATION = 0.01  # Minimum sleep duration in seconds
+
+# -------------------------
 # PAGE CONFIGURATION
 # -------------------------
 st.set_page_config(
@@ -275,10 +284,15 @@ def initialize_simulation():
     agents = []
     walkable_positions = city.get_walkable_positions()
     
+    if len(walkable_positions) < num_agents:
+        log_event("WARNING", f"Not enough walkable positions for {num_agents} agents")
+        num_agents = len(walkable_positions)
+    
     for i in range(num_agents):
-        if i < len(walkable_positions):
-            start_pos = walkable_positions[i * (len(walkable_positions) // num_agents)]
-            agent = Agent(f"Agent-{i+1}", start_pos, speed=0.8)
+        # Distribute agents evenly across walkable positions
+        pos_index = (i * len(walkable_positions)) // num_agents
+        start_pos = walkable_positions[pos_index]
+        agent = Agent(f"Agent-{i+1}", start_pos, speed=0.8)
             
             # Assign random goal and path
             goal_pos = random.choice(walkable_positions)
@@ -497,10 +511,10 @@ def update_simulation_step():
         # Check for events
         for agent in st.session_state.agents:
             if agent.is_at_goal():
-                if random.random() < 0.1:  # 10% chance to log
+                if random.random() < EVENT_LOG_PROBABILITY:
                     log_event("SUCCESS", f"{agent.name} reached goal")
             
-            if agent.energy < 20 and random.random() < 0.05:
+            if agent.energy < LOW_ENERGY_THRESHOLD and random.random() < ENERGY_WARNING_PROBABILITY:
                 log_event("WARNING", f"{agent.name} low energy ({agent.energy:.1f}%)")
 
 # -------------------------
@@ -674,12 +688,14 @@ def show_dashboard():
                     st.write(f"**Path Progress:** {selected_agent.path_index}/{len(selected_agent.path)}")
                 
                 st.write(f"**Speed:** {selected_agent.speed:.2f}")
-                st.write(f"**Perf Speed:** {selected_agent.speed * 1.2:.2f}")
+                st.write(f"**Perf Speed:** {selected_agent.speed * PERF_SPEED_MULTIPLIER:.2f}")
     
     # AUTO-REFRESH
     if st.session_state.is_running:
         update_simulation_step()
-        time.sleep(0.1 / st.session_state.speed_multiplier)  # Adjust for speed
+        # Calculate sleep duration with minimum threshold to prevent excessive CPU usage
+        sleep_duration = max(MIN_SLEEP_DURATION, 0.1 / st.session_state.speed_multiplier)
+        time.sleep(sleep_duration)
         st.rerun()
 
 # -------------------------
